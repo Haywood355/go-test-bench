@@ -36,6 +36,9 @@ func init() {
   "paths": {
     "/": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "swagger-server"
         ],
@@ -238,6 +241,9 @@ func init() {
   "paths": {
     "/": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "swagger-server"
         ],

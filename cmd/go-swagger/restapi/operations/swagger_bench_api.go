@@ -7,6 +7,7 @@ package operations
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -43,6 +44,9 @@ func NewSwaggerBenchAPI(spec *loads.Document) *SwaggerBenchAPI {
 
 		JSONConsumer: runtime.JSONConsumer(),
 
+		HTMLProducer: runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+			return errors.NotImplemented("html producer has not yet been implemented")
+		}),
 		JSONProducer: runtime.JSONProducer(),
 		TxtProducer:  runtime.TextProducer(),
 
@@ -90,6 +94,9 @@ type SwaggerBenchAPI struct {
 	//   - application/io.goswagger.go-test-bench.v1+json
 	JSONConsumer runtime.Consumer
 
+	// HTMLProducer registers a producer for the following mime types:
+	//   - text/html
+	HTMLProducer runtime.Producer
 	// JSONProducer registers a producer for the following mime types:
 	//   - application/io.goswagger.go-test-bench.v1+json
 	JSONProducer runtime.Producer
@@ -178,6 +185,9 @@ func (o *SwaggerBenchAPI) Validate() error {
 		unregistered = append(unregistered, "JSONConsumer")
 	}
 
+	if o.HTMLProducer == nil {
+		unregistered = append(unregistered, "HTMLProducer")
+	}
 	if o.JSONProducer == nil {
 		unregistered = append(unregistered, "JSONProducer")
 	}
@@ -243,6 +253,8 @@ func (o *SwaggerBenchAPI) ProducersFor(mediaTypes []string) map[string]runtime.P
 	result := make(map[string]runtime.Producer, len(mediaTypes))
 	for _, mt := range mediaTypes {
 		switch mt {
+		case "text/html":
+			result["text/html"] = o.HTMLProducer
 		case "application/io.goswagger.go-test-bench.v1+json":
 			result["application/io.goswagger.go-test-bench.v1+json"] = o.JSONProducer
 		case "text/plain":

@@ -6,11 +6,14 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"io"
+	"os"
 	"log"
 	"html/template"
 	"github.com/Contrast-Security-OSS/go-test-bench/pkg/servestd"
 	//"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
 
+	"github.com/Contrast-Security-OSS/go-test-bench/internal/injection/cmdi"
 	"github.com/Contrast-Security-OSS/go-test-bench/internal/common"
 
 	"github.com/go-openapi/errors"
@@ -98,7 +101,7 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 
-var Pd = common.ConstParams{
+var swaggerPD = common.ConstParams{
 	Year:      2022,
 	Logo:      "https://raw.githubusercontent.com/swaggo/swag/master/assets/swaggo.png",
 	Framework: "Go-Swagger",
@@ -108,23 +111,59 @@ var Pd = common.ConstParams{
 func addUI(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		var t *template.Template
+		// when should we move away from the std??
 		err := servestd.ParseTemplates()
 		if err != nil {
 			log.Fatalln("Cannot parse Templates:" , err)
 		}
-		var t *template.Template
-		t = servestd.Templates["index.gohtml"]
 
-		w.Header().Set("Application-Framework", "Go-Swagger")
-		err = t.ExecuteTemplate(w, "layout.gohtml", Pd)
+		// =========== cmd injection construction =========
+		// this has to be first populated so that the Pd
+		// object contains a valid RuleBar
+		cmdi.RegisterRoutes("go-swagger")
+
+		swaggerPD.Rulebar = common.PopulateRouteMap(common.AllRoutes)
+
+		var parms = common.Parameters{
+			ConstParams: swaggerPD,
+			Name:        "Command Injection Placeholder",
+		}
+
+		// GetUserInput might be doing something weird that
+		// plays a more important role than what I was ascribing to it
+		var cmdInjFileName = "cmdInjection.gohtml"
+		t = servestd.Templates[cmdInjFileName]
+
+		//w.Write([]byte("OK"))
+		log.Println("t variable log: ", t)
+		err = t.ExecuteTemplate(io.MultiWriter(w, os.Stdout),"layout.gohtml", &parms)
+		//err T= t.ExecuteTemplate(w, "layout.gohtml", &parms)
 		if err != nil {
 			log.Print(err.Error())
 		}
+
+		// =========== cmd injection construction =========
+
+		//err := servestd.ParseTemplates()
+		//if err != nil {
+		//	log.Fatalln("Cannot parse Templates:" , err)
+		//}
+		//var t *template.Template
+		// cmdInjection.gohtml
+		//t = servestd.Templates["index.gohtml"]
+
+		//w.Header().Set("Application-Framework", "Go-Swagger")
+		//err = t.ExecuteTemplate(w, "layout.gohtml", Pd)
+		//if err != nil {
+		//	log.Print(err.Error())
+		//}
 
 		log.Println("input request:", r.Method, r.URL)
 		next.ServeHTTP(w, r)
 	})
 }
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
+	//return handler
 	return addUI(handler)
 }

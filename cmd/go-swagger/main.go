@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"os"
+	"io"
 
 	// only if we are going to be implementing runtime.Producer.
-	//"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime"
 
 	"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
 
@@ -33,6 +34,12 @@ func main() {
 	api := operations.NewSwaggerBenchAPI(swaggerSpec)
 
 	//api.HTMLProducer = runtime.TextProducer()
+	api.HTMLProducer = runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+
+		w.Write([]byte("Double OK?"))
+		log.Print("Data:", data)
+		return nil
+	})
 
 	api.SwaggerServerRootHandler = swagger_server.RootHandlerFunc(serveswagger.SwaggerRootHandler)
 

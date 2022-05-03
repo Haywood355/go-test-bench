@@ -13,6 +13,7 @@
 //    - application/io.goswagger.go-test-bench.v1+json
 //
 //  Produces:
+//    - text/html
 //    - application/io.goswagger.go-test-bench.v1+json
 //    - text/plain
 //
