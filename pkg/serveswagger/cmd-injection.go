@@ -2,25 +2,25 @@ package serveswagger
 
 import (
 	"html/template"
-	"net/http"
 	"log"
+	"net/http"
 
+	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/cmd_injection"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/Contrast-Security-OSS/go-test-bench/pkg/servestd"
-	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/cmd_injection"
 )
-
 
 func CommandInjectionHandler(params cmd_injection.CmdInjectionFrontParams) middleware.Responder {
 
 	return CustomResponder(func(w http.ResponseWriter, producer runtime.Producer) {
 
 		var t *template.Template
-		t = servestd.Templates["underConstruction.gohtml"]
+		// TODO set the htmlproducer to set this by default if missing info
+		// t = servestd.Templates["underConstruction.gohtml"]
 
 		// Do we need these headers to be Set this way?
-		w.Header().Set("Application-Framework", "Go-Swagger")
+		// TODO: move this to global middleware
+		// w.Header().Set("Application-Framework", "Go-Swagger")
 
 		//err := t.ExecuteTemplate(w, "layout.gohtml", Pd)
 		err := t.ExecuteTemplate(w, "underConstruction.gohtml", Pd)
@@ -36,3 +36,4 @@ func CommandInjectionHandler(params cmd_injection.CmdInjectionFrontParams) middl
 		}
 	})
 }
+

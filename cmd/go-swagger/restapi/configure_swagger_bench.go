@@ -4,14 +4,9 @@ package restapi
 
 import (
 	"crypto/tls"
+	"fmt"
+	"io"
 	"net/http"
-
-	"log"
-	"html/template"
-	"github.com/Contrast-Security-OSS/go-test-bench/pkg/servestd"
-	//"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
-
-	"github.com/Contrast-Security-OSS/go-test-bench/internal/common"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,9 +15,11 @@ import (
 	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations"
 	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/cmd_injection"
 	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/swagger_server"
+	"github.com/Contrast-Security-OSS/go-test-bench/internal/common"
+	"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
 )
 
-//go:generate swagger generate server --target ../../go-swagger --name SwaggerBench --spec ../swagger.yml --principal interface{} --exclude-main
+//go:generate swagger generate server --target ../../go-swagger --name SwaggerBench --spec ../swagger.yml --principal interface{}
 
 func configureFlags(api *operations.SwaggerBenchAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
@@ -43,6 +40,33 @@ func configureAPI(api *operations.SwaggerBenchAPI) http.Handler {
 	// api.UseRedoc()
 
 	api.JSONConsumer = runtime.JSONConsumer()
+
+	api.HTMLProducer = runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+		var (
+			t                  = common.Templates["underConstruction.gohtml"]
+			params interface{} = serveswagger.Pd
+		)
+		if str, ok := data.(string); ok {
+			for _, r := range common.AllRoutes {
+				fmt.Println(str, r.Base)
+				if str != r.Base {
+					continue
+				}
+				tmpl, ok := common.Templates[r.TmplFile]
+				if !ok {
+					break
+				}
+				t = tmpl
+				params = common.Parameters{
+					ConstParams: serveswagger.Pd,
+					Name:        r.Base,
+				}
+			}
+		}
+
+		t.ExecuteTemplate(w, "layout.gohtml", params)
+		return nil
+	})
 
 	api.JSONProducer = runtime.JSONProducer()
 	api.TxtProducer = runtime.TextProducer()
@@ -89,42 +113,12 @@ func configureServer(s *http.Server, scheme, addr string) {
 
 // The middleware configuration is for the handler executors. These do not apply to the swagger.json document.
 // The middleware executes after routing but before authentication, binding and validation.
-
-
 func setupMiddlewares(handler http.Handler) http.Handler {
 	return handler
 }
 
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
-
-var Pd = common.ConstParams{
-	Year:      2022,
-	Logo:      "https://raw.githubusercontent.com/swaggo/swag/master/assets/swaggo.png",
-	Framework: "Go-Swagger",
-}
-
-//TODO: Well if this one turns out to be able to build the UI,
-func addUI(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		err := servestd.ParseTemplates()
-		if err != nil {
-			log.Fatalln("Cannot parse Templates:" , err)
-		}
-		var t *template.Template
-		t = servestd.Templates["index.gohtml"]
-
-		w.Header().Set("Application-Framework", "Go-Swagger")
-		err = t.ExecuteTemplate(w, "layout.gohtml", Pd)
-		if err != nil {
-			log.Print(err.Error())
-		}
-
-		log.Println("input request:", r.Method, r.URL)
-		next.ServeHTTP(w, r)
-	})
-}
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	return addUI(handler)
+	return handler
 }

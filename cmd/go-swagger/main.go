@@ -2,41 +2,56 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	// only if we are going to be implementing runtime.Producer.
 	//"github.com/go-openapi/runtime"
 
-	"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
-
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/Contrast-Security-OSS/go-test-bench/internal/injection/cmdi"
-	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/swagger_server"
+	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi"
+	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations"
 	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/cmd_injection"
-
+	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations/swagger_server"
+	"github.com/Contrast-Security-OSS/go-test-bench/internal/injection/cmdi"
+	"github.com/Contrast-Security-OSS/go-test-bench/pkg/serveswagger"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
 
 	"github.com/go-openapi/loads"
 
 	flags "github.com/jessevdk/go-flags"
-
-	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi"
-	"github.com/Contrast-Security-OSS/go-test-bench/cmd/go-swagger/restapi/operations"
 )
 
 func main() {
+	if err := serveswagger.Setup(); err != nil {
+		log.Fatal(err)
+	}
 
 	swaggerSpec, err := loads.Embedded(restapi.SwaggerJSON, restapi.FlatSwaggerJSON)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	// TODO: move most of this into serveswagger.Setup
 	api := operations.NewSwaggerBenchAPI(swaggerSpec)
 
-	//api.HTMLProducer = runtime.TextProducer()
+	// api.HTMLProducer = runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+	// 	t := common.Templates["underConstruction.gohtml"]
+	// 	t.ExecuteTemplate(w, "", serveswagger.Pd)
+	// 	return nil
+	// })
 
 	api.SwaggerServerRootHandler = swagger_server.RootHandlerFunc(serveswagger.SwaggerRootHandler)
 
-	api.CmdInjectionCmdInjectionFrontHandler = cmd_injection.CmdInjectionFrontHandlerFunc(serveswagger.CommandInjectionHandler)
+	api.CmdInjectionCmdInjectionFrontHandler = cmd_injection.CmdInjectionFrontHandlerFunc(
+		func(cmd_injection.CmdInjectionFrontParams) middleware.Responder {
+			return middleware.ResponderFunc(func(w http.ResponseWriter, p runtime.Producer) {
+				// XXX should this be a constant?
+				if err := p.Produce(w, "/cmdInjection"); err != nil {
+				}
+			})
+		},
+	)
 
 	api.CmdInjectionGetQueryExploitHandler = cmd_injection.GetQueryExploitHandlerFunc(func(params cmd_injection.GetQueryExploitParams) middleware.Responder {
 		var payload string
@@ -110,6 +125,7 @@ func main() {
 	}
 
 	server.ConfigureAPI()
+	server.Port = 8080
 
 	if err := server.Serve(); err != nil {
 		log.Fatalln(err)

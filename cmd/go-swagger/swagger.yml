@@ -2,7 +2,7 @@ consumes:
   - application/io.goswagger.go-test-bench.v1+json
 info:
   description: An API built with go-swagger to generate intentionally vulnerable endpoints
-  title: Go Swagger API integrated with Go Test Bench
+  title: swagger-bench
   version: 1.0.0
 produces:
   - application/io.goswagger.go-test-bench.v1+json
@@ -17,8 +17,8 @@ paths:
       tags:
         - swagger-server
       operationId: root
-#      produces:
-#        - text/html
+      produces:
+        - text/html
       responses:
         200:
           description: serves to display the root of the swagger API for the test bench
@@ -35,8 +35,8 @@ paths:
         - cmd-injection
       summary: supposed to serve the frontend for the query or cookie vulns
       operationId: cmdInjectionFront
-#      produces:
-#        - text/html
+      produces:
+        - text/html
       responses:
         200:
           description: served front end for command injection page of Swagger API

@@ -30,12 +30,15 @@ func init() {
   "swagger": "2.0",
   "info": {
     "description": "An API built with go-swagger to generate intentionally vulnerable endpoints",
-    "title": "Go Swagger API integrated with Go Test Bench",
+    "title": "swagger-bench",
     "version": "1.0.0"
   },
   "paths": {
     "/": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "swagger-server"
         ],
@@ -58,6 +61,9 @@ func init() {
     },
     "/cmdInjection": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "cmd-injection"
         ],
@@ -232,12 +238,15 @@ func init() {
   "swagger": "2.0",
   "info": {
     "description": "An API built with go-swagger to generate intentionally vulnerable endpoints",
-    "title": "Go Swagger API integrated with Go Test Bench",
+    "title": "swagger-bench",
     "version": "1.0.0"
   },
   "paths": {
     "/": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "swagger-server"
         ],
@@ -260,6 +269,9 @@ func init() {
     },
     "/cmdInjection": {
       "get": {
+        "produces": [
+          "text/html"
+        ],
         "tags": [
           "cmd-injection"
         ],
