@@ -17,5 +17,5 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/net v0.7.0
 )
